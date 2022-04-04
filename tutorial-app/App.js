@@ -1,12 +1,38 @@
 import { StatusBar } from "expo-status-bar";
 import React from "react";
 import { SafeAreaView, StyleSheet, Text, View } from "react-native";
-import { NativeRouter, Route, Routes } from "react-router-native";
-
+import {
+  Link,
+  NativeRouter,
+  Outlet,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-native";
+import { getInvoice, getInvoices } from "./data";
 export const Home = () => {
   return (
     <View>
-      <Text>Home</Text>
+      <Text style={{ fontSize: 24, paddingBottom: 4 }}>Bookeeper</Text>
+      <View
+        style={{
+          borderBottomWidth: "1px",
+          paddingBottom: 4,
+        }}
+      >
+        <View>
+          <Link to="/invoices">
+            <Text>Invoices</Text>
+          </Link>
+          <Link to="/expenses">
+            <Text>Expenses</Text>
+          </Link>
+        </View>
+      </View>
+      <Outlet />
     </View>
   );
 };
@@ -17,17 +43,67 @@ export const Expenses = () => {
     </View>
   );
 };
-export const Invoices = () => {
+
+function QueryNavLink({ to, children, ...props }) {
+  let location = useLocation();
   return (
-    <View>
-      <Text>Invoices</Text>
+    <Link to={to + location.search} {...props}>
+      {children}
+    </Link>
+  );
+}
+export const Invoices = () => {
+  let invoices = getInvoices();
+  let [searchParams, setSearchParams] = useSearchParams({ replace: true });
+
+  return (
+    <View style={{ display: "flex" }}>
+      <View
+        style={{
+          display: "flex",
+          borderRightWidth: 1,
+          padding: 8,
+        }}
+      >
+        <View>
+          {invoices
+            .filter((invoice) => {
+              let filter = searchParams.get("filter");
+              if (!filter) return true;
+              let name = invoice.name.toLowerCase();
+              return name.startsWith(filter.toLowerCase());
+            })
+            .map((invoice) => (
+              <View>
+                <QueryNavLink to={`/invoices/${invoice.number}`}>
+                  <Text>{invoice.name}</Text>
+                </QueryNavLink>
+              </View>
+            ))}
+        </View>
+      </View>
+      <View
+        style={{
+          display: "flex",
+        }}
+      >
+        <Text>hello</Text>
+        <Outlet />
+      </View>
     </View>
   );
 };
 export const Invoice = () => {
+  const navigate = useNavigate();
+  const params = useParams();
+  const invoice = getInvoice(parseInt(params.invoiceId, 10));
   return (
-    <View>
-      <Text>Invoice</Text>
+    <View style={{ padding: 8 }}>
+      <Text style={{ fontSize: 18 }}>Total Due: {invoice.amount}</Text>
+      <Text>
+        {invoice.name}: {invoice.number}
+      </Text>
+      <Text>Due Date: {invoice.due}</Text>
     </View>
   );
 };
